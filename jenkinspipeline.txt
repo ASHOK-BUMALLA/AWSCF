@@ -1,0 +1,159 @@
+Jenkins Pipeline Script:
+------------------------
+Git Credentials:
+token: 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
+-------------------------
+Step1: node:Allocate node--> lable is master/if want to run on slaves provideslaves label.
+
+node('master') {
+    // some block
+}
+
+
+Step2: stage:Stage ------> stage name given like continuous download
+
+stage('continuous downoad') {
+    // some block
+}
+
+
+Step3: git:Git--> Here we mentioned as stage is continuous download so we need to add SCM(Git) repository for continuous downoad.(https://github.com/sunildevops77/maven.git)
+
+git 'https://github.com/sunildevops77/maven.git'
+
+
+
+So overall code for stage1 is 
+
+
+node('master') 
+	{
+    stage('continuous downoad') 
+	{
+		git 'https://github.com/sunildevops77/maven.git'
+	}
+}
+-----------------
+Stage2: Continuous Build-- Steps-- sh:Shell Script
+									Shell Script --- mvn package
+
+
+node('master') 
+	{
+    stage('continuous downoad') 
+	{
+		git 'https://github.com/sunildevops77/maven.git'
+	}
+	stage('continuous build') 
+	{
+		sh 'mvn package
+	}
+}
+-------------------------
+Stage3: Deployment
+
+a)We need to establish password less SSH connection between Dev server(Jenkins) and QA server connect to QA erver using gitbash.
+b) Deployment is nothing but, copying the war file from dev server to QA server 
+--> Get the location of war file from log
+
+scp /var/lib/jenkins/workspace/pipeline111/webapp/target/webapp.war ubuntu@172.31.29.153:/var/lib/tomcat8/webapps/qaenv.war
+
+node('master') 
+	{
+    stage('continuous downoad') 
+	{
+		git 'https://github.com/sunildevops77/maven.git'
+	}
+	stage('continuous build') 
+	{
+		sh 'mvn package'
+	}
+	
+	
+Stage4: continuous Delivery
+
+	stage('continuous Deployment') 
+	{
+		sh 'scp /var/lib/jenkins/workspace/pipeline111/webapp/target/webapp.war ubuntu@172.31.29.153:/var/lib/tomcat8/webapps/qaenv.war'
+	}
+
+	stage('continuous Delivery') 
+	{
+		sh 'scp /var/lib/jenkins/workspace/pipeline111/webapp/target/webapp.war ubuntu@172.31.25.86:/var/lib/tomcat8/webapps/prodenv.war'
+	}
+}
+Note1:
+------
+If we are getting permission denied for /var/lib/tomcat8/webapps/prodenv.war
+
+execute this command
+sudo chmod -R o+w tomcat8/
+
+Note2:-
+-------
+==>if we are getting error likeHost key verification failed and lost connection. execute the fallowing commands
+
+link: https://stackoverflow.com/questions/15174194/jenkins-host-key-verification-failed
+1)Execute following commands on terminal
+$ sudo su -s /bin/bash jenkins
+
+provide password
+$ ssh-keygen
+
+you can see output as ::
+
+Generating public/private rsa key pair. 
+Enter file in which to save the key (/var/lib/jenkins/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again:
+
+3)Press Enter --> Do not give any passphrase--> press enter
+
+Key has been generated
+
+4) go to --> cat /var/lib/jenkins/.ssh/id_rsa.pub
+
+5) Copy key from id_rsa.pub
+
+6)Exit from bash
+
+7) ssh@yourrepository
+
+8) vi .ssh/authorized_keys
+
+9) Paste the key
+
+10) exit
+------------------
+
+pipeline {
+    agent {
+	    dockerfile true
+	}
+    environment {
+        DOCKER_IMAGE_NAME = 'bumallaashok/dockerima'
+        dockerImage = ''
+		registrycred = 'dockerhub'
+    }
+    stages {
+        stage('pulling code from Github') {
+            steps {
+                git credentialsId: 'Github01', url: 'https://github.com/ASHOK-BUMALLA/TEST.git'
+            }
+        }
+		stage('Build maven') {
+			steps {
+				sh 'mvn package'
+			}
+		}
+		stage('Build Docker image') {
+			steps {
+				sshagent(['Docker']) {
+                 sh "scp  /var/lib/jenkins/workspace/Pipeline-eks/webapp/target/webapp.war ubuntu@172.31.19.26:/home/ubuntu"
+              }
+			}
+		}
+		
+	}
+}
+---------------------------------------

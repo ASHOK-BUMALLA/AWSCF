@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Create EC2 instance"
+           
+Parameters:
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+  InstanceImageId:
+    Type: String
+    Default: ami-02248c9d6ba0b9e12
+    Description: Select AMI
+Resources:
+  Instance: #logical id
+    Type: AWS::EC2::Instance #type
+    Properties:
+      InstanceType: !Ref InstanceTypeParameter
+      ImageId: !Ref InstanceImageId
+      SubnetId: subnet-0f8fc8201e1007095
+      KeyName: Kp11
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - |+
+
+            - - '#!/bin/bash'
+              - apt-get update
+              - apt-get install apache2 -y

@@ -1,0 +1,167 @@
+Create codepipeline to execute cloudFormation:
+------------------------------------------------
+Link:- https://www.youtube.com/watch?v=-05Eor_Cq3s
+
+- Pipeline Concept
+- Demo Using Integration of CodeCommit, CodePipeline and CloudFormation
+
+CLOUDFORMATION TEMPLATE------>CODE COMMIT/GIT----->CODE PIPELINE------>STACK----->ENVIRONMENT
+
+CloudFormation template:
+------------------------
+Description: >
+	This template deloyes a VPC with a pair of public and private subnets spread across two Availability Zones. It deploys an Internet Gateway, with a default route on the public subnets. It deployes a pair of NAT Gateways (one in each AZ).
+	
+Parameters:
+
+	PublicSubnet1CIDR:
+		Description: Please enter the IP range (CIDR notaton) for the public subnet in the first Availability Zone
+		Type: string
+		Default: 172.31.1.0/24
+		
+	PrivateSubnet1CIDR:
+		Description: Please enter the IP range (CIDR notaton) for the pivate subnet in the first Availability Zone
+		Type: string
+		Default: 172.31.3.0/24
+		
+	VpcCIDR:
+		Descrpition: Please enter the IP range (CIDR notaton) for this VPC
+		Type: String
+		Default: 172.31.0.0/16
+	
+	Resources:
+	
+		PubPrivateVPC:
+			Type: 'AWS::EC2::VPC'
+			Properties:
+				CidrBlock: !Ref VpcCIDR
+				Tags:
+					- Key: Name
+					  Value: Cust VPC
+					
+		InternetGateway:
+			Type: 'AWS::EC2::InternetGateway'
+			Properties:
+				Tags:
+				  - Key: Name
+				    Value: IGW
+				  - Key: Network
+				    Value: Public
+					
+		GatewayToInternet:
+			Type: 'AWS::EC2::VPCGatewayAttachment'
+			Properties:
+				VpcId: !Ref PubPrivateVPC
+				InternetGatewayId: !Ref InternetGateway
+		
+		PublicSubnet1:
+			Type: 'AWS::EC2::Subnet'
+			Properties:
+				VpcId: !Ref PubPrivateVPC
+				AvailabilityZone: !Select [ 0, !GetAZs ]
+				CidrBlock: !Ref PublicSubnet1CIDR
+				MapPublicIpOnLaunch: true
+				Tags:
+				  - Key: Name
+				    Value: Public1 Subnet (AZ1)
+					
+		
+		PrivateSubnet1:
+			Type: 'AWS::EC2::Subnet'
+			Properties:
+				VpcId: !Ref PubPrivateVPC
+				AvailabilityZone: !Select [ 0, !GetAZs ]
+				CidrBlock: !Ref PrivateSubnet1CIDR
+				MapPublicIpOnLaunch: false
+				Tags:
+				  - Key: Name
+				    Value: Private1 Subnet (AZ1)
+					
+		PublicRouteTable1:
+		    Type: 'AWS::EC2::RouteTable'
+			Properties:
+			     VpcId: !Ref PubPrivateVPC
+				 Tags:
+				   - Key: Name
+				     Value: Public1 Routes
+				   - Key: Network
+				     Value: Public
+					 
+		PublicRoute1:
+		    Type: 'AWS::EC2::Route'
+			DependsOn: GatewayToInternet
+			Properties:
+				RouteTableId: !Ref PublicRouteTable1
+				DestinationCidrBlock: 0.0.0.0/0
+				GatewayId: !Ref InternetGateway
+				
+		PublicSubnet1RouteTableAssociation:
+			Type: "AWS::EC2::NatGateway"
+			Properties:
+				SubnetId: !Ref PublicSubnet1
+				RouteTableId: !Ref PublicRouteTable1
+				
+		NatGateway1:
+			Type: "Aws::EC2::NatGateway"
+			DependsOn: NatPublicIP1
+			Properties:
+				AllocationId: !GetAtt NatPublicIP1.AllocationId
+				SubnetId: !Ref PublicSubnet1
+		
+		NatPublicIP1:
+			Type: "AWS::EC2::EIP"
+			DependsOn: PubPrivateVPC
+			Properties:
+				Domain: vpc
+				
+		PrivateRouteTable1:
+			Type: 'AWS::EC2::Route"
+			Properties:
+				RouteTableId: !Ref PrivateRouteTable1
+				DestinationCidrBlock: 0.0.0.0/0
+				NatGatewayId: !Ref NatGateway1
+		
+		PrivateSubnet1RouteTableAssociation:
+			Type: "AWS::EC2::SubnetRouteTableAssociation"
+			Properties:
+				SubnetId: !Ref PriavateSubnet1
+				RouteTableId: !Ref PrivateRoutable1
+				
+Outputs:
+
+	PubPrivateVPC:
+		Description: A reference to the created VPC
+		Value: !Ref PubPrivateVPC
+		Export:
+			Name: VPC-PROD
+	
+	PublicSubnets1:
+		Description: A list of the public subnets
+		Value: !Ref PublicSubnet1
+		Export:
+			Name: Public-Subnet1
+	
+	PrivateSubnets1:
+		Description: A list of the private subnets
+		Value: !Ref PriavateSubnet1
+		Export:
+			Name: Priavate-Subnet1
+		
+
+
+1. First we need to push the code to repository by using Code Commit.
+    ---> Go to CodeCommit---Repositories---code---Upload a file
+	---Give Author name--Email address---CommitMessage---Then Click on Commit changes
+	---> So lets Create a Pipeline
+	    click on pipeline--- give pipeline name---Service Role---Create a role or existing role if u have then provide role ARN---choose Default S3 location or Custom Location--Default AWS Managed Key---Click on Next---select Source Provider(GIT/AWS CodeCommit/S3 etc..)--give Repository Name--BranchName---AmazonCloudWatch Events (recommended)/ Aws Codepipeline---skip the build stage for this project---Add Deploy stage---Deploy provider as AWS Cloud Formation---Region(Select Region)---Action mode(Create or update stack)---stack name---ArtifactName(SourceArtifact)---FileName(which yaml/json file we are commited)---Attach a role(cloudformation-VpcFullaccess)
+		
+   ---> Go to CloudFormation and check the Stack is created or not and Resorces also.
+   
+   
+Now we will check if we have changed code it will trigger or not that means it will create stack or not again.
+
+
+for that ---> go to CodeCommit---edit the code(File) like remove the output section---It will create another stack.
+	
+		
+Note: Here we have to use IamRole, That is getting use by code pipeline aswell plus there is another role created which is for executing or giving permissions to cloud formation template to execute our resources.

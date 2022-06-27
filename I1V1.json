@@ -1,0 +1,65 @@
+{
+	"Parameters" : {
+		"InstanceType" : {
+			"Type" : "String",
+			"Default" : "t1.micro",
+			"AllowedValues" : ["t1.micro", "t2.micro", "m1.large"],
+			"Description" : "Enter t1.micro, m1.small, or m1.large. Default is t1.micro."
+			}
+		},
+		"VolumeSize": {
+			"Type": "Number",
+			"Description" : "Enter the Volume size. Default is 5."
+		},
+		"MyAvailabilityZone": {
+			"Description": "Select the AZ",
+			"Type": "String",
+			"Default": "ap-southeast-1a",
+			"AllowedValues": [
+				"ap-southeast-1a",
+				"ap-southeast-1b",
+				"ap-southeast-1c"
+			]
+		},
+		"ami": {
+				"Type": "String"
+			},
+	"Resources" : {
+		"VolV1" : {
+			"Type":"AWS::EC2::Volume",
+			"Properties" : {
+				"AvailabilityZone": {"Ref":"MyAvailabilityZone"},
+				"Size" : {"Ref":"VolumeSize"},
+				"Tags" : [ { "Key": "Name", "Value":"V1"} ],
+				"VolumeType" : "gp2"
+			}
+		},
+		"i1": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"InstanceType":{"Ref" : "InstanceType"},
+				"ImageId": {"Ref": "ImgId"},
+				"SubnetId": "subnet-0529f24b15374b13b",
+				"KeyName": "Kp11",
+				"Tags" : [
+					{
+							"Key": "Name",
+							"Value": "I1"
+					}
+				]
+			}
+			},
+		"MountPoint" : {
+			"Type" : "AWS::EC2::VolumeAttachment",
+			"Properties" : {
+				"InstanceId" : { "Ref" : "i1" },
+				"VolumeId" : { "Ref" : "VolV1" },
+				"Device" : "/dev/sdh"
+			}
+		}
+	}
+}
+
+
+
+

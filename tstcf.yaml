@@ -1,0 +1,98 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Test Cloud Formation"
+
+Parameters:
+  KeyName:
+    Description: Select the key name from the list
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceCount: 
+    Description: Number of instances to Launch
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: Value must be between 1 and 3
+
+  InstanceType: 
+    Description: "EC2 Instance Type"
+    Type: String
+    Default: "t2.micro"
+    AllowedValues: 
+      - "t2.nano"
+      - "t2.micro"
+      - "t2.small"
+      - "t2.medium"
+      - "t2.large"
+
+  AvailabilityZone:
+    Description: Select the Availability Zone from the List
+    Type: List<AWS::EC2::AvailabilityZone::Name>
+    
+  SecurityGroupsId:
+    Description: The list of SecurityGroupIds in your Virtual Private Cloud (VPC)
+    Type: List<AWS::EC2::SecurityGroup::Id>	
+
+  SubnetId:
+    Description: Select Subnet from the list.
+    Type: List<AWS::EC2::Subnet::Id>
+
+  AMIID:
+    Description: Enter the AMI Id.
+    Type: AWS::EC2::Image::Id  
+
+  InstanceName:
+    Description: Type comma-separated list of the instance name
+    Type: String	
+
+Conditions:
+  Launch1: !Equals [!Ref InstanceCount, '1']
+  Launch2: !Equals [!Ref InstanceCount, '2'] 
+  Launch3: !Equals [!Ref InstanceCount, '3']
+
+Resources:
+  EC2Instance1:
+    Type: AWS::EC2::Instance
+    Condition: Launch1
+    Properties: 
+      AvailabilityZone: !Select [0, !Ref AvailabilityZone]
+      ImageId: !Ref AMIID
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds: !Select [0, !Ref SecurityGroupsId]
+      SubnetId: !Select [0, !Ref SubnetId]
+      Tags: 
+        - Key: "Name"
+          Value: !Select [0, !Split [",", !Ref InstanceName]]
+      Tenancy: default 	
+
+  EC2Instance2:
+    Type: AWS::EC2::Instance
+    Condition: Launch2
+    Properties: 
+      AvailabilityZone: !Select [1, !Ref AvailabilityZone]
+      ImageId: !Ref AMIID
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds: !Select [0, !Ref SecurityGroupsId]
+      SubnetId: !Select [1, !Ref SubnetId]
+      Tags: 
+        - Key: "Name"
+          Value: !Select [1 , !Split [",", !Ref InstanceName]]
+      Tenancy: default	  
+ 
+  EC2Instance2:
+    Type: AWS::EC2::Instance
+    Condition: Launch3
+    Properties: 
+      AvailabilityZone: !Select [2, !Ref AvailabilityZone]
+      ImageId: !Ref AMIID
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds: !Select [0, !Ref SecurityGroupsId]
+      SubnetId: !Select [2, !Ref SubnetId]
+      Tags: 
+        - Key: "Name"
+          Value: !Select [2 , !Split [",", !Ref InstanceName]]
+      Tenancy: default

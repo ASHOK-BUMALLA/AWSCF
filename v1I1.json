@@ -1,0 +1,71 @@
+{
+	"Resources": {
+		"MyVpc": {
+		"Type": "AWS::EC2::VPC",
+		"Properties": {
+			"CidrBlock": "10.0.0.0/16",
+			"Tags": [
+				{
+					"Key": "Name",
+					"Value": "App1-Vpc"
+				},
+				{
+					"Key": "Env",
+					"Value": "Dev"
+				}
+			]	
+		}
+		},
+		"MySN": {
+		"Type" : "AWS::EC2::Subnet",
+		"Properties" : {
+		"AvailabilityZone" : "ap-southeast-1a",
+		"CidrBlock" : "10.0.0.0/24",
+		"VpcId" : { "Ref":"MyVpc"},
+		"Tags" : [
+			{
+					"Key": "Name",
+					"Value": "Sn1"
+				}
+		]
+		}
+		},
+		"i1": {
+		"Type": "AWS::EC2::Instance",
+		"Properties": {
+			"InstanceType":"t2.micro",
+			"ImageId": "ami-0750a20e9959e44ff",
+			"SubnetId": { "Ref":"MySN" },
+			"KeyName": "Kp11",
+			"Tags" : [
+				{
+						"Key": "Name",
+						"Value": "I1"
+				}
+			]
+		}
+		},
+		"v1": {
+			"Type": "AWS::EC2::Volume",
+			"Properties": {
+				"Size": "5",
+				"VolumeType": "gp2",
+				"AvailabiltyZone": {"Fn::GetAtt": ["i1","AvailabilityZone"]},
+				"Tags" : [
+						{
+								"Key": "Name",
+								"Value": "I1V1"
+						}
+				]
+			}
+		},
+		"i1v1": {
+			"Type": "AWS::EC2::VolumeAttachment",
+			"Properties": {
+				"InstanceId": {"Ref":"i1"},
+				"VolumeId": {"Ref":"i1"},
+				"Device": "/dev/sdf"
+			}
+		}
+	}
+}

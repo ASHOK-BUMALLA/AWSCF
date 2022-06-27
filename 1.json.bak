@@ -1,0 +1,118 @@
+{
+	"Resources": {
+		"MyVpc": {
+		"Type": "AWS::EC2::VPC",
+		"Properties": {
+			"CidrBlock": "10.0.0.0/16",
+			"Tags": [
+				{
+					"Key": "Name",
+					"Value": "App1-Vpc"
+				},
+				{
+					"Key": "Env",
+					"Value": "Dev"
+				}
+			]	
+		}
+		},
+		"sn1": {
+		"Type" : "AWS::EC2::Subnet",
+		"Properties" : {
+		"AvailabilityZone" : "ap-southeast-1a",
+		"CidrBlock" : "10.0.0.0/24",
+		"VpcId" : { "Ref":"MyVpc"},
+		"Tags" : [
+			{
+					"Key": "Name",
+					"Value": "Sn1"
+				}
+		]
+		}
+		},
+		"sn2": {
+		"Type" : "AWS::EC2::Subnet",
+		"Properties" : {
+		"AvailabilityZone" : "ap-southeast-1b",
+		"CidrBlock" : "10.0.1.0/24",
+		"VpcId" : { "Ref":"MyVpc"},
+		"Tags" : [
+			{
+					"Key": "Name",
+					"Value": "Sn2"
+				}
+		]
+		}
+		},
+		"igw": {
+			"Type" : "AWS::EC2::InternetGateway",
+			"Properties" : {
+				"Tags" : [ {"Key" : "Name", "Value" : "IGW"}]}
+		},
+		"igwvpc1": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {"Ref":"MyVpc"},
+				"InternetGatewayId" : { "Ref" : "igw" }
+			}
+		},
+		"Rt1": {
+			"Type":"AWS::EC2::RouteTable",
+			"Properties":{
+				"VpcId": {"Ref":"MyVpc"}
+			}
+		},
+		"rt1igw": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref":"Rt1"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId":{"Ref":"igw"}
+				
+			}
+		},
+		"sn1rt1": {
+			"Type":"AWS::EC2::SubnetRouteTableAssociation",
+			"Properties":{
+				"RouteTableId": {"Ref":"Rt1"},
+				"SubnetId": {"Ref":"sn1"}
+			}
+		},
+		"ISG" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+			"GroupDescription" : "Allow http to client host",
+			"VpcId" : {"Ref" : "MyVpc"},
+			"SecurityGroupIngress" : [{
+			"IpProtocol" : "tcp",
+			"FromPort" : "22",
+			"ToPort" : "22",
+			"CidrIp" : "0.0.0.0/0"
+		}],
+			"SecurityGroupEgress" : [{
+			"IpProtocol" : "tcp",
+			"FromPort" : "80",
+			"ToPort" : "80",
+			"CidrIp" : "0.0.0.0/0"
+		}]
+		}
+	},
+	"myInstance" : {
+		"Type" : "AWS::EC2::Instance",
+		"Properties" : {
+			"ImageId" : "ami-05006b266c1be4e8f",
+			"InstanceType" : "t2.micro",
+			"KeyName" : {"Ref":"Nkp"},
+			"SubnetId": {"Ref":"sn1"},
+			"SecurityGroupIds" : [{"Ref":"ISG"}],
+			"UserData": {"Fn::Join":["\n",["#!/bin/bash","apt-get update","apt-get install apache2 -y"]]}
+	}
+	},
+     "Nkp": {
+            "Type": "AWS::EC2::KeyPair",
+            "Properties": {
+                "KeyName": "MyKeyPair"
+            }
+        }
+	}
+}

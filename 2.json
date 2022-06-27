@@ -1,0 +1,44 @@
+{
+	"Parameters" : {
+		"InstanceType" : {
+			"Type" : "String",
+			"Default" : "t1.micro",
+			"AllowedValues" : ["t1.micro", "t2.micro", "m1.large"],
+			"Description" : "Enter t1.micro, m1.small, or m1.large. Default is t1.micro."
+			}
+		},
+	"Resources" : {
+		"VolV1" : {
+			"Type":"AWS::EC2::Volume",
+			"Properties" : {
+				"AvailabilityZone": "ap-southeast-1a",
+				"Size" : "5",
+				"Tags" : [ { "Key": "Name", "Value":"V1"} ],
+				"VolumeType" : "gp2"
+			}
+		},
+		"i1": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"InstanceType":{"Ref" : "InstanceType"},
+				"ImageId": "ami-05006b266c1be4e8f",
+				"SubnetId": "subnet-0529f24b15374b13b",
+				"KeyName": "Kp11",
+				"Tags" : [
+					{
+							"Key": "Name",
+							"Value": "I1"
+					}
+				]
+			}
+			},
+		"MountPoint" : {
+			"Type" : "AWS::EC2::VolumeAttachment",
+			"Properties" : {
+				"InstanceId" : { "Ref" : "i1" },
+				"VolumeId" : { "Ref" : "VolV1" },
+				"Device" : "/dev/sdh"
+			}
+		}
+	}
+}

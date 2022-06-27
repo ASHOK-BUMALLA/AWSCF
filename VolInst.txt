@@ -1,0 +1,64 @@
+1) Create a Instance
+2) Create a Volume
+3) Attach volume to the Instance
+----------------------------
+Parameters:
+-----------
+InstanceType
+VolumeSize
+ImageId
+Az
+
+
+{
+	"Parameters": {
+			"InstanceType" : {
+			"Type" : "String",
+			"Default" : "t2.micro",
+			"AllowedValues" : ["t1.micro", "t2.micro", "m1.large"],
+			"Description" : "Enter t1.micro, m1.small, or m1.large. Default is t1.micro."
+			},
+			"ami": {
+				"Type": "String",
+				"Default": "ami-05006b266c1be4e8f"
+			},
+			"volumesize": {
+				"Type": "Number",
+				"Default": "5"
+			},
+			"availabiltyzone": {
+				"Type": "String",
+				"Default": "ap-southeast-1a"
+			}
+		},
+	"Resources": {
+		"i1": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": {"Ref":"ami"},
+				"InstanceType": {"Ref":"InstanceType"},
+				"SubnetId":"subnet-0529f24b15374b13b"
+			}
+		},
+		"VolV1" : {
+			"Type":"AWS::EC2::Volume",
+			"Properties" : {
+				"AvailabilityZone": {"Ref":"availabiltyzone"},
+				"Size" : {"Ref":"volumesize"},
+				"Tags" : [ { "Key": "Name", "Value":"V1"} ],
+				"VolumeType" : "gp2"
+			}
+		},
+			"MountPoint" : {
+				"Type" : "AWS::EC2::VolumeAttachment",
+				"Properties" : {
+					"InstanceId" : { "Ref" : "i1" },
+					"VolumeId" : { "Ref" : "VolV1" },
+					"Device" : "/dev/sdh"
+			}
+		}
+	}
+}
+
+
+
